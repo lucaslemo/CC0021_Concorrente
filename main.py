@@ -21,10 +21,8 @@ def func_thread(key_list, list01, index01, index02):
 
 
 def crivo(value, list01):
-    for i in range(len(list01)):
-        if list01[i] > value:
-            break
-        elif list01[i] == 0:
+    for i in range(value - 1):
+        if list01[i] == 0:
             continue
         else:
             for j in range(i + 1, len(list01)):
