@@ -1,8 +1,7 @@
 # depslib dependency file v1.0
-1624497043 source:c:\users\lucas\onedrive\Área de trabalho\ciencia da computacao\s5_programação concorrente\testes_crivo\c version\crivo\main.c
+1624734385 source:c:\users\lucas\onedrive\Área de trabalho\ciencia da computacao\s5_programação concorrente\testes_crivo\c version\crivo\main.c
 	<stdio.h>
 	<stdlib.h>
 	<math.h>
 	<omp.h>
-	<time.h>
 

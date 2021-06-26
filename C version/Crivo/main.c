@@ -2,18 +2,15 @@
 #include <stdlib.h>
 #include <math.h>
 #include <omp.h>
-#include <time.h>
-
-#define MAX 10000000
 
 
 // Aloca o vetor na memoria, de acordo com a variavel full o vetor
 // sera preenchiddo (full == 1) ou nao (full != 1)
 unsigned int *alocaVetor(int fator, int full){
-    unsigned int *novaLista = (unsigned int*)malloc(MAX * (sizeof(unsigned int)));
+    unsigned int *novaLista = (unsigned int*)malloc(fator * (sizeof(unsigned int)));
     if (novaLista != NULL){
         if(full == 1){
-            for(unsigned int i = 0; i < MAX - 1; i++){
+            for(unsigned int i = 0; i < fator - 1; i++){
                 novaLista[i] = i + 2;
             }
         }
@@ -65,12 +62,12 @@ int crivo(unsigned int *lista, int limit, int tamLista){
 // Crivo paralelo (4 threads)
 // Transforma todos os numeros nao primos em 0
 // Retorna a qtd de zeros (A partir do valor limite)
-int crivoParallel(unsigned int *lista, unsigned int *primeList, int limit,int tam){
+int crivoParallel(unsigned int *lista, unsigned int *primeList, int limit, int tam, int max){
     int count = 0;
     #pragma omp parallel num_threads(4)
     {
         #pragma omp for reduction (+:count)
-        for(int i = limit - 1; i < MAX - 1; i++){
+        for(int i = limit - 1; i < max - 1; i++){
             for(int j = 0; j < tam; j++){
                 if(lista[i] % primeList[j] == 0){
                     lista[i] = 0;
@@ -83,25 +80,25 @@ int crivoParallel(unsigned int *lista, unsigned int *primeList, int limit,int ta
     return count;
 }
 
-double serial(){
+double serial(int max){
     // Cria os ponteiros e as variaveis usadas
     unsigned int *fullList = NULL;
     unsigned int *primeList = NULL;
-    int limit = floor(sqrt(MAX));
+    int limit = floor(sqrt(max));
     int zeros = 0;
     int tamPrime = 0;
 
     // Aloca o vetor
-    fullList = alocaVetor(MAX, 1);
+    fullList = alocaVetor(max, 1);
     double tempo = omp_get_wtime();
 
     // Chama a funcao crivo e gurada a qtd de 0 no vetor
-    zeros = crivo(fullList, limit, MAX);
-    tamPrime = MAX - zeros - 1;
+    zeros = crivo(fullList, limit, max);
+    tamPrime = max - zeros - 1;
 
     // Aloca a vetor com a qtd de numeros primos no intervalo
     primeList = alocaVetor(tamPrime, 0);
-    copiaVetor(fullList, primeList, MAX, 0, 0);
+    copiaVetor(fullList, primeList, max, 0, 0);
     tempo = omp_get_wtime() - tempo;
 
     // Limpa a memorira
@@ -113,18 +110,18 @@ double serial(){
     return tempo;
 }
 
-double parallel(){
+double parallel(int max){
     // Cria os ponteiros e as variaveis usadas
     unsigned int *fullList = NULL;
     unsigned int *primeList = NULL;
     unsigned int *keyList = NULL;
-    int limit = floor(sqrt(MAX));
+    int limit = floor(sqrt(max));
     int zeros = 0;
     int tamPrime = 0;
     int tamKey = 0;
 
     // Aloca o vetores
-    fullList = alocaVetor(MAX, 1);
+    fullList = alocaVetor(max, 1);
     keyList = alocaVetor(limit, 0);
     copiaVetor(fullList, keyList, limit, 0, 0);
     double tempo = omp_get_wtime();
@@ -140,12 +137,12 @@ double parallel(){
     keyList = NULL;
 
     // Chama a funcao crivo paralelo e gurada os zeros
-    zeros += crivoParallel(fullList, primeList, limit,tamKey);
-    tamPrime = MAX - zeros - 1;
+    zeros += crivoParallel(fullList, primeList, limit, tamKey, max);
+    tamPrime = max - zeros - 1;
 
     // realoca o vetor final com o tamanho igual a qtd de primos no intervalo
     primeList = realocaVetor(primeList, tamPrime);
-    copiaVetor(fullList, primeList, MAX, limit - 1, tamKey);
+    copiaVetor(fullList, primeList, max, limit - 1, tamKey);
     tempo = omp_get_wtime() - tempo;
 
     // Limpa a memoria
@@ -159,17 +156,42 @@ double parallel(){
 
 double speedup(double serial, double parallel){
     int qtdThread = 4;
+    double spUp = 0;
+    if(parallel != 0){
+        spUp = serial/parallel;
+    }
 
-    return serial/parallel;
+    return spUp;
 }
 
 int main(){
-    double tempoSerial = serial();
-    double tempoParallel = parallel();
-    printf("Para o valor: %d\n", MAX);
-    printf("Tempo serial: %lf\n", tempoSerial);
-    printf("Tempo parallel: %lf\n", tempoParallel);
-    printf("Speedup: %lf\n", speedup(tempoSerial, tempoParallel));
+    int max[] = {10000000, 50000000, 100000000};
+    FILE *file = NULL;
+    double tempoSerial = 0, avgSerial = 0;
+    double tempoParallel = 0, avgParallel = 0;
+    double spUp = 0, avgSpUp = 0;
+    file = fopen("Result.txt", "w");
+    if(file != NULL){
+        for(int i = 0; i < 1; i++){
+            fprintf(file, "Valor testado: %d\n\n", max[i]);
+            for(int j = 0; j < 10; j++){
+                tempoSerial = serial(max[i]);
+                tempoParallel = parallel(max[i]);
+                spUp = speedup(tempoSerial, tempoParallel);
+                avgSerial += tempoSerial;
+                avgParallel += tempoParallel;
+                avgSpUp += spUp;
+                fprintf(file, "Rep: %d\n", j + 1);
+                fprintf(file, "Tempo Serial: %lf\n", tempoSerial);
+                fprintf(file, "Tempo Parallel: %lf\n", tempoParallel);
+                fprintf(file, "Speedup: %lf\n\n", spUp);
+            }
+            fprintf(file, "Media do tempo Serial: %lf\n", avgSerial/10);
+            fprintf(file, "Media do tempo Parallel: %lf\n", avgParallel/10);
+            fprintf(file, "Media do Speedup: %lf\n\n", avgSpUp/10);
+        }
+    }
+    fclose(file);
 
     return 0;
 }
