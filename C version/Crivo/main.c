@@ -212,7 +212,7 @@ int main_testes(){
         fprintf(file, "Tempos de execucao para os algoritmos sequencial e paralelo do crivo de Eratostenes.\n");
         fprintf(file, "Os valores medidos:\nI: 10000000(dez milhoes)\nII: 50000000(cinquenta milhoes)\nIII: 100000000(cem milhoes)\n");
         fprintf(file, "Cada experimento será repetido 10 vezes para garantir que desvios aleatorios nao contaminem os resultados.\n\n");
-        for(int i = 0; i < 2; i++){
+        for(int i = 0; i < 3; i++){
             printf("Valor: %d\n", max[i]);
             avgSerial = 0;
             avgParallel = 0;
