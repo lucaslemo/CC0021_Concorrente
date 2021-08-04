@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <omp.h>
+#include <mpi.h>
 
 
 // Aloca o vetor na memoria, de acordo com a variavel full o vetor
@@ -80,7 +81,7 @@ int crivoSerial(unsigned int *lista, unsigned int *primeList, int limit, int tam
 // Crivo paralelo (4 threads)
 // Transforma todos os numeros nao primos em 0
 // Retorna a qtd de zeros (A partir do valor limite)
-int crivoParallel(unsigned int *lista, unsigned int *primeList, int qtdThread,int limit, int tam, int max){
+int crivoParallel_OpenMP(unsigned int *lista, unsigned int *primeList, int qtdThread,int limit, int tam, int max){
     int count = 0;
     printf("Inicio algoritmo paralelo...\n");
     #pragma omp parallel num_threads(qtdThread)
@@ -148,9 +149,9 @@ double serial(int max){
     return tempo;
 }
 
-// Funcao principal para o algoritmo paralelo
+// Funcao principal para o algoritmo paralelo usando OpenMp
 // Retorna o tempo gasto no algortimo
-double parallel(int max, int qtdThread){
+double parallel_OpenMP(int max, int qtdThread){
     // Cria os ponteiros e as variaveis usadas
     unsigned int *fullList = NULL;
     unsigned int *primeList = NULL;
@@ -177,7 +178,7 @@ double parallel(int max, int qtdThread){
     keyList = NULL;
 
     // Chama a funcao crivo paralelo e gurada os zeros
-    zeros += crivoParallel(fullList, primeList, qtdThread,limit, tamKey, max);
+    zeros += crivoParallel_OpenMP(fullList, primeList, qtdThread,limit, tamKey, max);
     tamPrime = max - zeros - 1;
 
     // realoca o vetor final com o tamanho igual a qtd de primos no intervalo
@@ -193,6 +194,22 @@ double parallel(int max, int qtdThread){
 
     return tempo;
 }
+
+// Funcao principal para o algoritmo paralelo usando MPI
+// Retorna o tempo gasto no algortimo
+double parallel_MPI(int max){
+    MPI_Init(NULL, NULL);
+    double tempo = MPI_Wtime();
+    int ncpus;
+    MPI_Comm_size(MPI_COMM_WORLD, &ncpus);
+    int meu_rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &meu_rank);
+    printf("Hello world do processador rank #%d/%d\n",meu_rank, ncpus);
+    MPI_Finalize();
+
+    return tempo;
+}
+
 
 // Calcula e retorna o speedUp
 double speedup(double serial, double parallel){
@@ -226,7 +243,7 @@ int main_principal(){
             for(int j = 0; j < 10; j++){
                 printf("Rep: %d\n", j + 1);
                 tempoSerial = serial(max[i]);
-                tempoParallel = parallel(max[i], qtdThread);
+                tempoParallel = parallel_OpenMP(max[i], qtdThread);
                 spUp = speedup(tempoSerial, tempoParallel);
                 avgSerial += tempoSerial;
                 avgParallel += tempoParallel;
@@ -251,7 +268,11 @@ int main_principal(){
     return 0;
 }
 
-int main(){
-
+int main(int argc, char** argv){
+    int i = 10000000;
+    double s = serial(i);
+    double p = parallel_OpenMP(i, 4);
+    double mpi = parallel_OpenMP(i);
+    printf("Serial: %lf\nParallel: %lf\n", s, p);
     return 0;
 }
