@@ -196,16 +196,16 @@ double parallel_OpenMP(int max, int qtdThread){
 }
 
 
-double parallel_MPI(int max){
-    if(rank == 0){
-        unsigned int *fullList = NULL;
-        unsigned int *primeList = NULL;
-        unsigned int *keyList = NULL;
-        int limit = floor(sqrt(max));
-        int zeros = 0;
-        int tamPrime = 0;
-        int tamKey = 0;
+double parallel_MPI(int max, int* rank){
+    unsigned int *fullList = NULL;
+    unsigned int *primeList = NULL;
+    int limit = floor(sqrt(max));
+    int zeros = 0;
+    int tamPrime = 0;
+    int tamKey = 0;
 
+    if(rank == 0){
+        unsigned int *keyList = NULL;
         fullList = alocaVetor(max, 1);
         keyList = alocaVetor(limit, 0);
         copiaVetor(fullList, keyList, limit, 0, 0);
@@ -217,12 +217,15 @@ double parallel_MPI(int max){
         copiaVetor(keyList, primeList, limit, 0, 0);
         free(keyList);
         keyList = NULL;
-
-        free(primeList);
-        free(fullList);
-        primeList = NULL;
-        fullList = NULL;
     }
+
+    MPI_Bcast(&tamPrime, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    printf("Tamprime: %d do rank: %d\n", tamPrime, rank);
+
+    free(primeList);
+    free(fullList);
+    primeList = NULL;
+    fullList = NULL;
 }
 
 // Calcula e retorna o speedUp
@@ -287,7 +290,7 @@ int main(int argc, char** argv){
     int ncpus;
     MPI_Comm_size(MPI_COMM_WORLD, &ncpus);
     int rank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &meu_rank);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     int i = 10000000;
 
     if(rank == 0){
@@ -296,7 +299,7 @@ int main(int argc, char** argv){
         printf("Serial: %lf\nParallel: %lf\n", s, p);
     }
 
-    parallel_MPI(i);
+    parallel_MPI(i, &rank);
 
     MPI_Barrier(MPI_COMM_WORLD);
     MPI_Finalize();
