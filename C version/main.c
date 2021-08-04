@@ -196,7 +196,7 @@ double parallel_OpenMP(int max, int qtdThread){
 }
 
 
-double parallel_MPI(int max, int* rank){
+double parallel_MPI(int max, int rank){
     unsigned int *fullList = NULL;
     unsigned int *primeList = NULL;
     int limit = floor(sqrt(max));
@@ -219,8 +219,11 @@ double parallel_MPI(int max, int* rank){
         keyList = NULL;
     }
 
-    MPI_Bcast(&tamPrime, 1, MPI_INT, 0, MPI_COMM_WORLD);
-    printf("Tamprime: %d do rank: %d\n", tamPrime, rank);
+    MPI_Bcast(&tamKey, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    if(rank != 0){
+	primeList = alocaVetor(tamKey, 0);
+    }
+    MPI_Bcast(primeList, tamKey, MPI_INT, 0, MPI_COMM_WORLD);
 
     free(primeList);
     free(fullList);
@@ -291,7 +294,7 @@ int main(int argc, char** argv){
     MPI_Comm_size(MPI_COMM_WORLD, &ncpus);
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    int i = 10000000;
+    int i = 120;
 
     if(rank == 0){
         double s = serial(i);
@@ -299,7 +302,7 @@ int main(int argc, char** argv){
         printf("Serial: %lf\nParallel: %lf\n", s, p);
     }
 
-    parallel_MPI(i, &rank);
+    parallel_MPI(i, rank);
 
     MPI_Barrier(MPI_COMM_WORLD);
     MPI_Finalize();
