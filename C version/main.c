@@ -195,21 +195,35 @@ double parallel_OpenMP(int max, int qtdThread){
     return tempo;
 }
 
-// Funcao principal para o algoritmo paralelo usando MPI
-// Retorna o tempo gasto no algortimo
+
 double parallel_MPI(int max){
-    MPI_Init(NULL, NULL);
-    double tempo = MPI_Wtime();
-    int ncpus;
-    MPI_Comm_size(MPI_COMM_WORLD, &ncpus);
-    int meu_rank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &meu_rank);
-    printf("Hello world do processador rank #%d/%d\n",meu_rank, ncpus);
-    MPI_Finalize();
+    if(rank == 0){
+        unsigned int *fullList = NULL;
+        unsigned int *primeList = NULL;
+        unsigned int *keyList = NULL;
+        int limit = floor(sqrt(max));
+        int zeros = 0;
+        int tamPrime = 0;
+        int tamKey = 0;
 
-    return tempo;
+        fullList = alocaVetor(max, 1);
+        keyList = alocaVetor(limit, 0);
+        copiaVetor(fullList, keyList, limit, 0, 0);
+
+        zeros = listaChave(keyList, limit);
+        tamKey = limit - zeros - 1;
+        primeList = alocaVetor(tamKey, 0);
+
+        copiaVetor(keyList, primeList, limit, 0, 0);
+        free(keyList);
+        keyList = NULL;
+
+        free(primeList);
+        free(fullList);
+        primeList = NULL;
+        fullList = NULL;
+    }
 }
-
 
 // Calcula e retorna o speedUp
 double speedup(double serial, double parallel){
@@ -269,10 +283,22 @@ int main_principal(){
 }
 
 int main(int argc, char** argv){
+    MPI_Init(NULL, NULL);
+    int ncpus;
+    MPI_Comm_size(MPI_COMM_WORLD, &ncpus);
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &meu_rank);
     int i = 10000000;
-    double s = serial(i);
-    double p = parallel_OpenMP(i, 4);
-    double mpi = parallel_OpenMP(i);
-    printf("Serial: %lf\nParallel: %lf\n", s, p);
+
+    if(rank == 0){
+        double s = serial(i);
+        double p = parallel_OpenMP(i, 4);
+        printf("Serial: %lf\nParallel: %lf\n", s, p);
+    }
+
+    parallel_MPI(i);
+
+    MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Finalize();
     return 0;
 }
