@@ -224,6 +224,10 @@ double parallel_MPI(int max, int rank){
 	primeList = alocaVetor(tamKey, 0);
     }
     MPI_Bcast(primeList, tamKey, MPI_INT, 0, MPI_COMM_WORLD);
+    for(int i=0; i < tamKey; i++){
+	    printf("Rank: %d -> %d\n", rank, primeList[i]);
+    }
+
 
     free(primeList);
     free(fullList);
@@ -289,6 +293,7 @@ int main_principal(){
 }
 
 int main(int argc, char** argv){
+
     MPI_Init(NULL, NULL);
     int ncpus;
     MPI_Comm_size(MPI_COMM_WORLD, &ncpus);
@@ -297,11 +302,12 @@ int main(int argc, char** argv){
     int i = 120;
 
     if(rank == 0){
+	/*
         double s = serial(i);
         double p = parallel_OpenMP(i, 4);
         printf("Serial: %lf\nParallel: %lf\n", s, p);
+	*/
     }
-
     parallel_MPI(i, rank);
 
     MPI_Barrier(MPI_COMM_WORLD);
