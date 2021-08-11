@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <math.h>
 #include <omp.h>
-#include <mpi.h>
 
 
 // Aloca o vetor na memoria, de acordo com a variavel full o vetor
@@ -195,46 +194,6 @@ double parallel_OpenMP(int max, int qtdThread){
     return tempo;
 }
 
-
-double parallel_MPI(int max, int rank){
-    unsigned int *fullList = NULL;
-    unsigned int *primeList = NULL;
-    int limit = floor(sqrt(max));
-    int zeros = 0;
-    int tamPrime = 0;
-    int tamKey = 0;
-
-    if(rank == 0){
-        unsigned int *keyList = NULL;
-        fullList = alocaVetor(max, 1);
-        keyList = alocaVetor(limit, 0);
-        copiaVetor(fullList, keyList, limit, 0, 0);
-
-        zeros = listaChave(keyList, limit);
-        tamKey = limit - zeros - 1;
-        primeList = alocaVetor(tamKey, 0);
-
-        copiaVetor(keyList, primeList, limit, 0, 0);
-        free(keyList);
-        keyList = NULL;
-    }
-
-    MPI_Bcast(&tamKey, 1, MPI_INT, 0, MPI_COMM_WORLD);
-    if(rank != 0){
-	primeList = alocaVetor(tamKey, 0);
-    }
-    MPI_Bcast(primeList, tamKey, MPI_INT, 0, MPI_COMM_WORLD);
-    for(int i=0; i < tamKey; i++){
-	    printf("Rank: %d -> %d\n", rank, primeList[i]);
-    }
-
-
-    free(primeList);
-    free(fullList);
-    primeList = NULL;
-    fullList = NULL;
-}
-
 // Calcula e retorna o speedUp
 double speedup(double serial, double parallel){
     double spUp = 0;
@@ -245,7 +204,7 @@ double speedup(double serial, double parallel){
     return spUp;
 }
 
-int main_principal(){
+int main(){
     int max[] = {10000000, 50000000, 100000000};
     int qtdThread = 4;
     FILE *file = NULL;
@@ -257,7 +216,7 @@ int main_principal(){
         fprintf(file, "Tempos de execucao para os algoritmos sequencial e paralelo do crivo de Eratostenes.\n");
         fprintf(file, "Os valores medidos:\nI: 10000000(dez milhoes)\nII: 50000000(cinquenta milhoes)\nIII: 100000000(cem milhoes)\n");
         fprintf(file, "Cada experimento será repetido 10 vezes para garantir que desvios aleatorios nao contaminem os resultados.\n\n");
-        for(int i = 0; i < 2; i++){
+        for(int i = 0; i < 3; i++){
             printf("Valor: %d\n", max[i]);
             avgSerial = 0;
             avgParallel = 0;
@@ -289,28 +248,5 @@ int main_principal(){
         printf("Não foi possivel criar o arquivo de gravação\n");
     }
 
-    return 0;
-}
-
-int main(int argc, char** argv){
-
-    MPI_Init(NULL, NULL);
-    int ncpus;
-    MPI_Comm_size(MPI_COMM_WORLD, &ncpus);
-    int rank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    int i = 120;
-
-    if(rank == 0){
-	/*
-        double s = serial(i);
-        double p = parallel_OpenMP(i, 4);
-        printf("Serial: %lf\nParallel: %lf\n", s, p);
-	*/
-    }
-    parallel_MPI(i, rank);
-
-    MPI_Barrier(MPI_COMM_WORLD);
-    MPI_Finalize();
     return 0;
 }
