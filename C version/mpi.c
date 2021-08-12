@@ -86,6 +86,7 @@ void parallel_MPI(int max, int rank, int ncpus){
     int tamPrime = 0;
     int tamKey = 0;
     int tamSub = ceil((max - 1)/(float)ncpus);
+    double tempo = 0;
     max = max - 1;
 
 
@@ -95,6 +96,7 @@ void parallel_MPI(int max, int rank, int ncpus){
         keyList = alocaVetor(limit, 0);
         copiaVetor(fullList, keyList, limit, 0, 0);
 
+	tempo = MPI_Wtime();
         localZeros = listaChave(keyList, limit);
         tamKey = limit - localZeros;
 
@@ -127,9 +129,8 @@ void parallel_MPI(int max, int rank, int ncpus){
         tamPrime = max - globalZeros;
 	primeList = realocaVetor(primeList, tamPrime);
 	copiaVetor(fullList, primeList, (tamSub*ncpus), limit, tamKey);
-	for(int i = 0; i < tamPrime; i++){
-	    printf("%d\n", primeList[i]);
-	}
+	tempo = MPI_Wtime() - tempo;
+	printf("Tempo: %lf\n", tempo);
     }
 
     free(subList);
@@ -148,7 +149,7 @@ int main(int argc, char** argv){
     MPI_Comm_size(MPI_COMM_WORLD, &ncpus);
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    int i = 1000;
+    int i = 50000000;
 
     parallel_MPI(i, rank, ncpus);
 
