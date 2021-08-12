@@ -160,7 +160,7 @@ double parallel_OpenMP(int max, int qtdThread){
     int zeros = 0;
     int tamPrime = 0;
     int tamKey = 0;
-    max = max -1;
+    max = max - 1;
 
     // Aloca o vetores
     fullList = alocaVetor(max, 1);
@@ -252,3 +252,4 @@ int main(){
 
     return 0;
 }
+
