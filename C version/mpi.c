@@ -58,46 +58,84 @@ int listaChave(unsigned int *lista, int limit){
     return count;
 }
 
+int crivo(unsigned int *lista, unsigned int *primeList, int limit, int tamPrime, int maxSub){
+    int count = 0;
+    for(int i = 0; i < maxSub; i++){
+        if(lista[i] <= limit + 1){
+	    lista[i] = 0;
+	    continue;
+	}
+	for(int j = 0; j < tamPrime; j++){
+	    if(lista[i] % primeList[j] == 0){
+	        lista[i] = 0;
+		count++;
+		break;
+	    }
+	}
+    }
+    return count;
+}
 
 void parallel_MPI(int max, int rank, int ncpus){
     unsigned int *fullList = NULL;
+    unsigned int *subList = NULL;
     unsigned int *primeList = NULL;
     int limit = floor(sqrt(max)) - 1;
-    int zeros = 0;
+    int localZeros = 0;
+    int globalZeros = 0;
     int tamPrime = 0;
     int tamKey = 0;
-    int tamSub = 0;
+    int tamSub = ceil((max - 1)/(float)ncpus);
     max = max - 1;
+
 
     if(rank == 0){
         unsigned int *keyList = NULL;
         fullList = alocaVetor(max, 1);
         keyList = alocaVetor(limit, 0);
         copiaVetor(fullList, keyList, limit, 0, 0);
-        zeros = listaChave(keyList, limit);
-        tamKey = limit - zeros;
-        primeList = alocaVetor(tamKey, 0);
 
+        localZeros = listaChave(keyList, limit);
+        tamKey = limit - localZeros;
+
+        primeList = alocaVetor(tamKey, 0);
         copiaVetor(keyList, primeList, limit, 0, 0);
+
         free(keyList);
         keyList = NULL;
     }
-
+    
     MPI_Bcast(&tamKey, 1, MPI_INT, 0, MPI_COMM_WORLD);
     if(rank != 0){
         primeList = alocaVetor(tamKey, 0);
     }
     MPI_Bcast(primeList, tamKey, MPI_INT, 0, MPI_COMM_WORLD);
-    if(rank == 0){
-	float sub = ((max - 1) - limit)/(float)ncpus;
-	int auxInt = floor(sub);
-	float auxFloat = sub - auxInt;
-	tamSub = auxInt;
-    }
-    MPI_Bcast(&tamSub, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    
+    subList = alocaVetor(tamSub, 0);
+    MPI_Scatter(fullList, tamSub, MPI_INT, subList, tamSub, MPI_INT, 0, MPI_COMM_WORLD);
+    
+    localZeros += crivo(subList, primeList, limit, tamKey, tamSub);
+    MPI_Reduce(&localZeros, &globalZeros, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
 
+    if(rank == 0){
+        free(fullList);
+	fullList = alocaVetor((tamSub * ncpus), 0);
+    }
+    MPI_Gather(subList, tamSub, MPI_INT, fullList, tamSub, MPI_INT, 0, MPI_COMM_WORLD);
+
+    if(rank == 0){
+        tamPrime = max - globalZeros;
+	primeList = realocaVetor(primeList, tamPrime);
+	copiaVetor(fullList, primeList, (tamSub*ncpus), limit, tamKey);
+	for(int i = 0; i < tamPrime; i++){
+	    printf("%d\n", primeList[i]);
+	}
+    }
+
+    free(subList);
     free(primeList);
     free(fullList);
+    subList = NULL;
     primeList = NULL;
     fullList = NULL;
 
@@ -110,7 +148,7 @@ int main(int argc, char** argv){
     MPI_Comm_size(MPI_COMM_WORLD, &ncpus);
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    int i = 120;
+    int i = 1000;
 
     parallel_MPI(i, rank, ncpus);
 
