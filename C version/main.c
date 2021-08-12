@@ -10,7 +10,7 @@ unsigned int *alocaVetor(int fator, int full){
     unsigned int *novaLista = (unsigned int*)malloc(fator * (sizeof(unsigned int)));
     if (novaLista != NULL){
         if(full == 1){
-            for(unsigned int i = 0; i < fator - 1; i++){
+            for(unsigned int i = 0; i < fator; i++){
                 novaLista[i] = i + 2;
             }
         }
@@ -30,7 +30,7 @@ unsigned int *realocaVetor(unsigned int* primeList, int fator){
 // Funcao usada para copiar um vetor a partir de outro
 // E possivel copiar porcoes do vetor e filtrar os zeros
 void copiaVetor(unsigned int* lista01, unsigned int* lista02, int indice, int iInicio, int jInicio){
-    for(int i = iInicio, j = jInicio; i < indice - 1; i++){
+    for(int i = iInicio, j = jInicio; i < indice; i++){
         if(lista01[i] != 0){
             lista02[j] = lista01[i];
             j++;
@@ -43,10 +43,10 @@ void copiaVetor(unsigned int* lista01, unsigned int* lista02, int indice, int iI
 // Retorna a qtd de zeros
 int listaChave(unsigned int *lista, int limit){
     int count = 0;
-    for(int i = 0; i < limit - 1; i++){
+    for(int i = 0; i < limit; i++){
         if(lista[i] == 0)
             continue;
-        for(int j = i + 1; j < limit - 1; j++){
+        for(int j = i + 1; j < limit; j++){
             if(lista[j] == 0)
                 continue;
             else if(lista[j] % lista[i] == 0){
@@ -64,7 +64,7 @@ int listaChave(unsigned int *lista, int limit){
 int crivoSerial(unsigned int *lista, unsigned int *primeList, int limit, int tam, int max){
     int count = 0;
     printf("Inicio algoritmo serial...\n");
-    for(int i = limit - 1; i < max - 1; i++){
+    for(int i = limit; i < max; i++){
         for(int j = 0; j < tam; j++){
             if(lista[i] % primeList[j] == 0){
                 lista[i] = 0;
@@ -86,7 +86,7 @@ int crivoParallel_OpenMP(unsigned int *lista, unsigned int *primeList, int qtdTh
     #pragma omp parallel num_threads(qtdThread)
     {
         #pragma omp for reduction (+:count)
-        for(int i = limit - 1; i < max - 1; i++){
+        for(int i = limit; i < max; i++){
             for(int j = 0; j < tam; j++){
                 if(lista[i] % primeList[j] == 0){
                     lista[i] = 0;
@@ -107,10 +107,11 @@ double serial(int max){
     unsigned int *fullList = NULL;
     unsigned int *primeList = NULL;
     unsigned int *keyList = NULL;
-    int limit = floor(sqrt(max));
+    int limit = floor(sqrt(max)) - 1;
     int zeros = 0;
     int tamPrime = 0;
     int tamKey = 0;
+    max = max - 1;
 
     // Aloca o vetores
     fullList = alocaVetor(max, 1);
@@ -120,7 +121,7 @@ double serial(int max){
 
     // Chama a funcao listaChave e guarda a qtd de zeros do vetor keyList
     zeros = listaChave(keyList, limit);
-    tamKey = limit - zeros - 1;
+    tamKey = limit - zeros;
 
     // Aloca o vetor com a qtd de numeros primos de 2 ate o valor limite
     primeList = alocaVetor(tamKey, 0);
@@ -132,11 +133,11 @@ double serial(int max){
 
     // Chama a funcao crivo paralelo e gurada os zeros
     zeros += crivoSerial(fullList, primeList, limit, tamKey, max);
-    tamPrime = max - zeros - 1;
+    tamPrime = max - zeros;
 
     // realoca o vetor final com o tamanho igual a qtd de primos no intervalo
     primeList = realocaVetor(primeList, tamPrime);
-    copiaVetor(fullList, primeList, max, limit - 1, tamKey);
+    copiaVetor(fullList, primeList, max, limit, tamKey);
     tempo = omp_get_wtime() - tempo;
 
     // Limpa a memorira
@@ -155,10 +156,11 @@ double parallel_OpenMP(int max, int qtdThread){
     unsigned int *fullList = NULL;
     unsigned int *primeList = NULL;
     unsigned int *keyList = NULL;
-    int limit = floor(sqrt(max));
+    int limit = floor(sqrt(max)) - 1;
     int zeros = 0;
     int tamPrime = 0;
     int tamKey = 0;
+    max = max -1;
 
     // Aloca o vetores
     fullList = alocaVetor(max, 1);
@@ -168,7 +170,7 @@ double parallel_OpenMP(int max, int qtdThread){
 
     // keyList e um vetor com todos os primos de 2 ate o valor limite
     zeros = listaChave(keyList, limit);
-    tamKey = limit - zeros - 1;
+    tamKey = limit - zeros;
     primeList = alocaVetor(tamKey, 0);
 
     // Copia apenas os valores nao zero de keyList e libera a keyList
@@ -178,11 +180,11 @@ double parallel_OpenMP(int max, int qtdThread){
 
     // Chama a funcao crivo paralelo e gurada os zeros
     zeros += crivoParallel_OpenMP(fullList, primeList, qtdThread,limit, tamKey, max);
-    tamPrime = max - zeros - 1;
+    tamPrime = max - zeros;
 
     // realoca o vetor final com o tamanho igual a qtd de primos no intervalo
     primeList = realocaVetor(primeList, tamPrime);
-    copiaVetor(fullList, primeList, max, limit - 1, tamKey);
+    copiaVetor(fullList, primeList, max, limit, tamKey);
     tempo = omp_get_wtime() - tempo;
 
     // Limpa a memoria
