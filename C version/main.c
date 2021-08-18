@@ -213,7 +213,7 @@ double speedup(double serial, double parallel){
 }
 
 int main(){
-    int max[] = {10000000, 50000000, 100000000};
+    int max[] = {10000000, 50000000, 100000000, 150000000, 200000000};
     int qtdThread = 4;
     FILE *file = NULL;
     double tempoSerial = 0;
@@ -222,7 +222,7 @@ int main(){
     file = fopen("Resultados_Crivo_de_Eratostenes.csv", "w");
     if(file != NULL){
         fprintf(file, "tamanho;algoritmo;cores;qtd_primos;tempo;speedup\n");
-        for(int i = 0; i < 3; i++){
+        for(int i = 0; i < 5; i++){
             printf("Valor: %d\n", max[i]);
             for(int j = 0; j < 10; j++){
                 fprintf(file, "%d;serial;1;", max[i]);

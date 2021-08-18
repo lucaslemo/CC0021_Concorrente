@@ -154,7 +154,7 @@ int main(int argc, char** argv){
     MPI_Comm_size(MPI_COMM_WORLD, &ncpus);
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    int max[] = {10000000, 50000000, 100000000};
+    int max[] = {10000000, 50000000, 100000000, 150000000, 200000000};
     FILE *file = NULL;
     if(rank == 0){
 	char *titulo = NULL;
@@ -163,7 +163,7 @@ int main(int argc, char** argv){
         file = fopen(titulo, "w");
         fprintf(file, "tamanho;algoritmo;cores;qtd_primos;tempo\n");
     }
-    for(int i = 0; i < 3; i++){
+    for(int i = 0; i < 5; i++){
         for(int j = 0; j < 10; j++){
             parallel_MPI(max[i], rank, ncpus, file);
         }
