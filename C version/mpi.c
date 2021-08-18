@@ -76,7 +76,7 @@ int crivo(unsigned int *lista, unsigned int *primeList, int limit, int tamPrime,
     return count;
 }
 
-void parallel_MPI(int max, int rank, int ncpus){
+void parallel_MPI(int max, int rank, int ncpus, FILE *file){
     unsigned int *fullList = NULL;
     unsigned int *subList = NULL;
     unsigned int *primeList = NULL;
@@ -106,16 +106,16 @@ void parallel_MPI(int max, int rank, int ncpus){
         free(keyList);
         keyList = NULL;
     }
-    
+
     MPI_Bcast(&tamKey, 1, MPI_INT, 0, MPI_COMM_WORLD);
     if(rank != 0){
         primeList = alocaVetor(tamKey, 0);
     }
     MPI_Bcast(primeList, tamKey, MPI_INT, 0, MPI_COMM_WORLD);
-    
+
     subList = alocaVetor(tamSub, 0);
     MPI_Scatter(fullList, tamSub, MPI_INT, subList, tamSub, MPI_INT, 0, MPI_COMM_WORLD);
-    
+
     localZeros += crivo(subList, primeList, limit, tamKey, tamSub);
     MPI_Reduce(&localZeros, &globalZeros, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
 
@@ -133,6 +133,12 @@ void parallel_MPI(int max, int rank, int ncpus){
 	printf("Tempo: %lf\n", tempo);
     }
 
+    //Salvando em .csv
+    if(rank == 0){
+        fprintf(file, "%d;mpi;%d;%d;%.4lf;0\n", max + 1, ncpus, tamPrime,tempo);
+    }
+
+    //Limpa a memoria
     free(subList);
     free(primeList);
     free(fullList);
@@ -149,9 +155,21 @@ int main(int argc, char** argv){
     MPI_Comm_size(MPI_COMM_WORLD, &ncpus);
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    int i = 50000000;
+    int max[] = {10000000, 50000000, 100000000};
+    FILE *file = NULL;
+    if(rank == 0){
+        file = fopen("Resultados_Crivo_de_Eratostenes_MPI.csv", "w");
+        fprintf(file, "tamanho;algoritmo;cores;qtd_primos;tempo;speedup\n");
+    }
+    for(int i = 0; i < 3; i++){
+        for(int j = 0; j < 1; j++){
+            parallel_MPI(max[i], rank, ncpus, file);
+        }
+    }
 
-    parallel_MPI(i, rank, ncpus);
+    if(rank == 0){
+        fclose(file);
+    }
 
     MPI_Barrier(MPI_COMM_WORLD);
     MPI_Finalize();

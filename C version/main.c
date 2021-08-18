@@ -102,7 +102,7 @@ int crivoParallel_OpenMP(unsigned int *lista, unsigned int *primeList, int qtdTh
 
 // Funcao principal para o algoritmo serial
 // Retorna o tempo gasto no algortimo
-double serial(int max){
+double serial(int max, FILE *file){
     // Cria os ponteiros e as variaveis usadas
     unsigned int *fullList = NULL;
     unsigned int *primeList = NULL;
@@ -140,6 +140,9 @@ double serial(int max){
     copiaVetor(fullList, primeList, max, limit, tamKey);
     tempo = omp_get_wtime() - tempo;
 
+    //Adiciona a qtd de numeros primos na linha do csv
+    fprintf(file, "%d;", tamPrime);
+
     // Limpa a memorira
     free(primeList);
     free(fullList);
@@ -151,7 +154,7 @@ double serial(int max){
 
 // Funcao principal para o algoritmo paralelo usando OpenMp
 // Retorna o tempo gasto no algortimo
-double parallel_OpenMP(int max, int qtdThread){
+double parallel_OpenMP(int max, int qtdThread, FILE *file){
     // Cria os ponteiros e as variaveis usadas
     unsigned int *fullList = NULL;
     unsigned int *primeList = NULL;
@@ -187,6 +190,9 @@ double parallel_OpenMP(int max, int qtdThread){
     copiaVetor(fullList, primeList, max, limit, tamKey);
     tempo = omp_get_wtime() - tempo;
 
+    //Adiciona a qtd de numeros primos na linha do csv
+    fprintf(file, "%d;", tamPrime);
+
     // Limpa a memoria
     free(primeList);
     free(fullList);
@@ -210,39 +216,23 @@ int main(){
     int max[] = {10000000, 50000000, 100000000};
     int qtdThread = 4;
     FILE *file = NULL;
-    double tempoSerial = 0, avgSerial;
-    double tempoParallel = 0, avgParallel;
-    double spUp = 0, avgSpUp;
-    file = fopen("Resultados_Crivo_de_Eratostenes.txt", "w");
+    double tempoSerial = 0;
+    double tempoParallel = 0;
+    double spUp = 0;
+    file = fopen("Resultados_Crivo_de_Eratostenes.csv", "w");
     if(file != NULL){
-        fprintf(file, "Tempos de execucao para os algoritmos sequencial e paralelo do crivo de Eratostenes.\n");
-        fprintf(file, "Os valores medidos:\nI: 10000000(dez milhoes)\nII: 50000000(cinquenta milhoes)\nIII: 100000000(cem milhoes)\n");
-        fprintf(file, "Cada experimento será repetido 10 vezes para garantir que desvios aleatorios nao contaminem os resultados.\n\n");
+        fprintf(file, "tamanho;algoritmo;cores;qtd_primos;tempo;speedup\n");
         for(int i = 0; i < 3; i++){
             printf("Valor: %d\n", max[i]);
-            avgSerial = 0;
-            avgParallel = 0;
-            avgSpUp = 0;
-            fprintf(file, "Para o valor: %d\n", max[i]);
-            fprintf(file, "------------------\n");
             for(int j = 0; j < 10; j++){
-                printf("Rep: %d\n", j + 1);
-                tempoSerial = serial(max[i]);
-                tempoParallel = parallel_OpenMP(max[i], qtdThread);
+                fprintf(file, "%d;serial;1;", max[i]);
+                tempoSerial = serial(max[i], file);
+                fprintf(file, "%.4lf;1.00x\n", tempoSerial);
+                fprintf(file, "%d;openMp;%d;", max[i], qtdThread);
+                tempoParallel = parallel_OpenMP(max[i], qtdThread, file);
                 spUp = speedup(tempoSerial, tempoParallel);
-                avgSerial += tempoSerial;
-                avgParallel += tempoParallel;
-                avgSpUp += spUp;
-                fprintf(file, "Rep: %d\n", j + 1);
-                fprintf(file, "Tempo Serial: %lf\n", tempoSerial);
-                fprintf(file, "Tempo Parallel: %lf\n", tempoParallel);
-                fprintf(file, "Speedup: %lf\n", spUp);
-                fprintf(file, "Eficiencia: %lf\n\n", spUp/qtdThread);
+                fprintf(file, "%.4lf;%.2lfx\n", tempoParallel, spUp);
             }
-            fprintf(file, "Media do tempo Serial: %lf\n", avgSerial/10);
-            fprintf(file, "Media do tempo Parallel: %lf\n", avgParallel/10);
-            fprintf(file, "Media do Speedup: %lf\n", avgSpUp/10);
-            fprintf(file, "------------------\n\n");
         }
         fclose(file);
     }
