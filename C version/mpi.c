@@ -130,12 +130,11 @@ void parallel_MPI(int max, int rank, int ncpus, FILE *file){
 	primeList = realocaVetor(primeList, tamPrime);
 	copiaVetor(fullList, primeList, (tamSub*ncpus), limit, tamKey);
 	tempo = MPI_Wtime() - tempo;
-	printf("Tempo: %lf\n", tempo);
     }
 
     //Salvando em .csv
     if(rank == 0){
-        fprintf(file, "%d;mpi;%d;%d;%.4lf;0\n", max + 1, ncpus, tamPrime,tempo);
+        fprintf(file, "%d;mpi;%d;%d;%.4lf\n", max + 1, ncpus, tamPrime,tempo);
     }
 
     //Limpa a memoria
@@ -158,11 +157,14 @@ int main(int argc, char** argv){
     int max[] = {10000000, 50000000, 100000000};
     FILE *file = NULL;
     if(rank == 0){
-        file = fopen("Resultados_Crivo_de_Eratostenes_MPI.csv", "w");
-        fprintf(file, "tamanho;algoritmo;cores;qtd_primos;tempo;speedup\n");
+	char *titulo = NULL;
+	titulo = (char*)calloc(70, sizeof(char));
+	sprintf(titulo, "Resultados_Crivo_de_Eratostenes_MPI_Qtd_Processos_%d.csv", ncpus);
+        file = fopen(titulo, "w");
+        fprintf(file, "tamanho;algoritmo;cores;qtd_primos;tempo\n");
     }
     for(int i = 0; i < 3; i++){
-        for(int j = 0; j < 1; j++){
+        for(int j = 0; j < 10; j++){
             parallel_MPI(max[i], rank, ncpus, file);
         }
     }
