@@ -39,7 +39,7 @@ void copiaVetor(unsigned int* lista01, unsigned int* lista02, int indice, int iI
 }
 
 // Cria lista com os primos chaves
-// Até o valor limite transforma todas os numeros não primos em zeros
+// Atï¿½ o valor limite transforma todas os numeros nï¿½o primos em zeros
 // Retorna a qtd de zeros
 int listaChave(unsigned int *lista, int limit){
     int count = 0;
@@ -237,7 +237,7 @@ int main(){
         fclose(file);
     }
     else{
-        printf("Não foi possivel criar o arquivo de gravação\n");
+        printf("NÃ£o foi possivel criar o arquivo de gravaÃ§Ã£o\n");
     }
 
     return 0;

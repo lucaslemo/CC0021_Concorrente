@@ -62,16 +62,16 @@ int crivo(unsigned int *lista, unsigned int *primeList, int limit, int tamPrime,
     int count = 0;
     for(int i = 0; i < maxSub; i++){
         if(lista[i] <= limit + 1){
-	    lista[i] = 0;
-	    continue;
-	}
-	for(int j = 0; j < tamPrime; j++){
-	    if(lista[i] % primeList[j] == 0){
-	        lista[i] = 0;
-		count++;
-		break;
-	    }
-	}
+            lista[i] = 0;
+            continue;
+        }
+        for(int j = 0; j < tamPrime; j++){
+            if(lista[i] % primeList[j] == 0){
+                lista[i] = 0;
+                count++;
+                break;
+            }
+        }
     }
     return count;
 }
@@ -96,7 +96,7 @@ void parallel_MPI(int max, int rank, int ncpus, FILE *file){
         keyList = alocaVetor(limit, 0);
         copiaVetor(fullList, keyList, limit, 0, 0);
 
-	tempo = MPI_Wtime();
+	    tempo = MPI_Wtime();
         localZeros = listaChave(keyList, limit);
         tamKey = limit - localZeros;
 
@@ -121,15 +121,15 @@ void parallel_MPI(int max, int rank, int ncpus, FILE *file){
 
     if(rank == 0){
         free(fullList);
-	fullList = alocaVetor((tamSub * ncpus), 0);
+        fullList = alocaVetor((tamSub * ncpus), 0);
     }
     MPI_Gather(subList, tamSub, MPI_INT, fullList, tamSub, MPI_INT, 0, MPI_COMM_WORLD);
 
     if(rank == 0){
         tamPrime = max - globalZeros;
-	primeList = realocaVetor(primeList, tamPrime);
-	copiaVetor(fullList, primeList, (tamSub*ncpus), limit, tamKey);
-	tempo = MPI_Wtime() - tempo;
+        primeList = realocaVetor(primeList, tamPrime);
+        copiaVetor(fullList, primeList, (tamSub*ncpus), limit, tamKey);
+        tempo = MPI_Wtime() - tempo;
     }
 
     //Salvando em .csv
@@ -157,9 +157,9 @@ int main(int argc, char** argv){
     int max[] = {10000000, 50000000, 100000000, 150000000, 200000000};
     FILE *file = NULL;
     if(rank == 0){
-	char *titulo = NULL;
-	titulo = (char*)calloc(70, sizeof(char));
-	sprintf(titulo, "Resultados_Crivo_de_Eratostenes_MPI_Qtd_Processos_%d.csv", ncpus);
+        char *titulo = NULL;
+        titulo = (char*)calloc(70, sizeof(char));
+        sprintf(titulo, "Resultados_Crivo_de_Eratostenes_MPI_Qtd_Processos_%d.csv", ncpus);
         file = fopen(titulo, "w");
         fprintf(file, "tamanho;algoritmo;cores;qtd_primos;tempo\n");
     }
